@@ -181,6 +181,8 @@ export interface ProxyNode {
     'congestion-controller'?: string; // 拥塞控制
     'udp-relay-mode'?: string; // UDP中继模式
     'reduce-rtt'?: boolean; // 减少RTT
+    'disable-sni'?: boolean; // 禁用 SNI (TUIC)
+    'udp-over-stream'?: boolean; // UDP over Stream (TUIC)
     'request-timeout'?: number; // 请求超时
     'max-udp-relay-packet-size'?: number;
     'max-open-streams'?: number; // 最大打开流数
