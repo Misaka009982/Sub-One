@@ -344,8 +344,11 @@ app.get('*', (req: express.Request, res: express.Response, next: express.NextFun
     // 2. 如果是静态资源且路径不等于 /，交给 static 中间件
     if (isStaticAsset && pathname !== '/') return next();
 
-    // 3. 特殊处理：如果是根路径 / 且没有 token，则是 UI 访问
-    if (pathname === '/' && !hasToken) {
+    // UI Vue Router 前端单页路由白名单，拦截后交由 index.html 处理
+    const frontendRoutes = ['/dashboard', '/subscriptions', '/profiles', '/nodes'];
+
+    // 3. 特殊处理：如果是根路径或者是在前端白名单路由内，且没有带 token，则是 UI 访问
+    if ((pathname === '/' || frontendRoutes.includes(pathname)) && !hasToken) {
         return next();
     }
 

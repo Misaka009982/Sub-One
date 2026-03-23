@@ -1,30 +1,23 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
-import { DashboardHomeView } from '../features/dashboard';
-import { NodeDetailsModal, NodesTabView } from '../features/nodes';
-import { ProfilesTabView } from '../features/profiles';
-import { SubscriptionsTabView } from '../features/subscriptions';
-import { type AppTab } from '../shared/constants/navigation';
+import { NodeDetailsModal } from '../features/nodes';
 import { useDataStore } from '../stores/data';
 import type { InitialData, Profile, Subscription } from '../types/index';
 
 const props = withDefaults(
     defineProps<{
         data?: InitialData | null;
-        activeTab?: AppTab;
     }>(),
     {
-        data: null,
-        activeTab: 'dashboard'
+        data: null
     }
 );
 
-const emit = defineEmits<{
-    (e: 'update:activeTab', value: AppTab): void;
-}>();
-
 const dataStore = useDataStore();
+const router = useRouter();
+const route = useRoute();
 
 const isLoading = ref(true);
 const showNodeDetailsModal = ref(false);
@@ -32,19 +25,15 @@ const selectedSubscription = ref<Subscription | null>(null);
 const selectedProfile = ref<Profile | null>(null);
 const tabAction = ref<{ action: string; payload?: unknown } | null>(null);
 
-const switchToTab = (tab: AppTab) => {
-    emit('update:activeTab', tab);
-};
-
-const handleShowSubscriptionNodes = (subscription: Subscription) => {
-    selectedSubscription.value = subscription;
-    selectedProfile.value = null;
-    showNodeDetailsModal.value = true;
-};
-
-const handleShowProfileNodes = (profile: Profile) => {
-    selectedProfile.value = profile;
-    selectedSubscription.value = null;
+const handleShowNodes = (payload: Subscription | Profile) => {
+    // If payload has 'url', it's a Subscription (technically profiles don't have urls in our types)
+    if ('url' in payload || 'nodeCount' in payload) {
+        selectedSubscription.value = payload as Subscription;
+        selectedProfile.value = null;
+    } else {
+        selectedProfile.value = payload as Profile;
+        selectedSubscription.value = null;
+    }
     showNodeDetailsModal.value = true;
 };
 
@@ -54,7 +43,6 @@ watch(
         if (data) {
             dataStore.initData(data);
         }
-
         isLoading.value = false;
     },
     { immediate: true }
@@ -65,36 +53,21 @@ watch(
     <div v-if="isLoading" class="py-16 text-center text-gray-500">正在加载...</div>
 
     <div v-else class="container-optimized w-full">
-        <Transition name="page-fade" mode="out-in">
-            <div :key="activeTab" class="space-y-6 lg:space-y-8">
-                <DashboardHomeView
-                    v-if="activeTab === 'dashboard'"
-                    @add-subscription="switchToTab('subscriptions')"
-                    @add-node="switchToTab('nodes')"
-                    @add-profile="switchToTab('profiles')"
-                />
-
-                <SubscriptionsTabView
-                    v-if="activeTab === 'subscriptions'"
-                    :tab-action="tabAction"
-                    @show-nodes="handleShowSubscriptionNodes"
-                    @action-handled="tabAction = null"
-                />
-
-                <ProfilesTabView
-                    v-if="activeTab === 'profiles'"
-                    :tab-action="tabAction"
-                    @show-nodes="handleShowProfileNodes"
-                    @action-handled="tabAction = null"
-                />
-
-                <NodesTabView
-                    v-if="activeTab === 'nodes'"
-                    :tab-action="tabAction"
-                    @action-handled="tabAction = null"
-                />
-            </div>
-        </Transition>
+        <router-view v-slot="{ Component }">
+            <Transition name="page-fade" mode="out-in">
+                <div :key="route.name as string" class="space-y-6 lg:space-y-8">
+                    <component 
+                        :is="Component"
+                        :tab-action="tabAction"
+                        @action-handled="tabAction = null"
+                        @show-nodes="handleShowNodes"
+                        @add-subscription="router.push('/subscriptions')"
+                        @add-node="router.push('/nodes')"
+                        @add-profile="router.push('/profiles')"
+                    />
+                </div>
+            </Transition>
+        </router-view>
     </div>
 
     <NodeDetailsModal

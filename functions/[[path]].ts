@@ -15,6 +15,13 @@ export async function onRequest(context: EventContext<Env, any, any>) {
 
     const isStaticAsset =
         /^\/(assets|@vite|src)\/./.test(url.pathname) || /\.\w+$/.test(url.pathname);
+
+    // UI Vue Router 前端单页路由白名单，拦截后交由静态文件（index.html）处理
+    const frontendRoutes = ['/dashboard', '/subscriptions', '/profiles', '/nodes'];
+    if (frontendRoutes.includes(url.pathname)) {
+        return next();
+    }
+
     if (!isStaticAsset && url.pathname !== '/') {
         try {
             return await handleSubRequest(context);

@@ -14,6 +14,7 @@ import { useLayoutStore } from './stores/layout';
 import { useSessionStore } from './stores/session';
 import { useThemeStore } from './stores/theme';
 import { useUIStore } from './stores/ui';
+import { useRoute, useRouter } from 'vue-router';
 
 const SettingsModal = defineAsyncComponent(() =>
     import('./features/settings').then((module) => module.SettingsModal)
@@ -26,19 +27,27 @@ const sessionStore = useSessionStore();
 const themeStore = useThemeStore();
 const layoutStore = useLayoutStore();
 const uiStore = useUIStore();
+const route = useRoute();
+const router = useRouter();
 
 const { sessionState, initialData } = storeToRefs(sessionStore);
 const { checkSession, initializeSystem, login, logout } = sessionStore;
 
 const { subscriptionsCount, profilesCount, manualNodesCount } = useDataCounts(initialData);
 
-const activeTab = ref<AppTab>('dashboard');
+const activeTab = computed({
+    get: () => (route.name as AppTab) || 'dashboard',
+    set: (val: AppTab) => {
+        router.push({ name: val });
+    }
+});
+
 const showHelpModal = ref(false);
 
 const isLoggedIn = computed(() => sessionState.value === 'loggedIn');
 const isLoadingSession = computed(() => sessionState.value === 'loading');
 const isNeedsSetup = computed(() => sessionState.value === 'needsSetup');
-const currentTabInfo = computed(() => APP_TABS[activeTab.value] ?? APP_TABS.dashboard);
+const currentTabInfo = computed(() => APP_TABS[activeTab.value] || APP_TABS.dashboard);
 
 const openSettings = () => {
     uiStore.show();
@@ -98,7 +107,7 @@ onMounted(() => {
                     </header>
 
                     <div class="dashboard-content">
-                        <Dashboard v-model:active-tab="activeTab" :data="initialData" />
+                        <Dashboard :data="initialData" />
                     </div>
 
                     <Footer class="dashboard-footer" />

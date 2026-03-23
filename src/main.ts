@@ -25,7 +25,10 @@ const pinia = createPinia();
 // 创建 Vue 应用实例
 const app = createApp(App);
 
+import router from './router';
+
 // 注册 Pinia 插件
 app.use(pinia);
+app.use(router);
 // 将应用挂载到 id 为 'app' 的 DOM 元素
 app.mount('#app');
