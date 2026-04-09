@@ -2,7 +2,7 @@ import { KV_KEY_SETTINGS, KV_KEY_SUBS } from '../config/constants';
 import { GLOBAL_USER_AGENT, defaultSettings } from '../config/defaults';
 import { parse } from '../proxy';
 import { AppConfig, Subscription, SubscriptionUserInfo } from '../proxy/types';
-import { checkAndNotify } from '../services/notification';
+import { checkAndNotify, sendTgNotification } from '../services/notification';
 import { StorageFactory } from '../services/storage';
 import { getStorageBackendInfo } from '../services/storage-backend';
 import { Env } from '../types';
@@ -117,6 +117,10 @@ export async function handleCronTrigger(env: Env): Promise<Response> {
         if (hasChanges) {
             await storage.put(KV_KEY_SUBS, latestSubs);
             console.log(`Updated ${updates.size} subscriptions with new info.`);
+
+            // 发送自动更新结果汇总到 TG
+            const summaryMsg = `🔄 *定时更新报告*\n\n✅ 成功刷新了 \`${updates.size}\` 个订阅的数据。`;
+            await sendTgNotification(settings as AppConfig, summaryMsg);
         }
     } else {
         console.log('Cron job finished. No changes detected.');

@@ -154,6 +154,21 @@ const handleSave = async () => {
     }
 };
 
+const cronUrl = computed(() => {
+    if (!settings.value.cronSecret) return '';
+    return `${window.location.origin}/api/cron/trigger?token=${settings.value.cronSecret}`;
+});
+
+const copyCronUrl = async () => {
+    if (!cronUrl.value) return;
+    try {
+        await navigator.clipboard.writeText(cronUrl.value);
+        showToast('✅ 触发链接已复制到剪贴板', 'success');
+    } catch (err) {
+        showToast('❌ 复制失败，请手动复制', 'error');
+    }
+};
+
 // 标签页状态
 const activeTab = ref<'general' | 'advanced' | 'storage'>('general');
 
@@ -698,6 +713,28 @@ watch(
                                         <code class="px-1 py-0.5 mt-1 bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 rounded inline-block select-all">/api/cron/trigger?token=您的密钥</code><br />
                                         如果您使用的是 Cloudflare Pages，由于平台限制必须通过这种接口方式触发定时任务；Docker 用户自带内部定时器，可选择配置。
                                     </p>
+                                    
+                                    <!-- 动态生成的触发链接展示 -->
+                                    <div v-if="cronUrl" class="mt-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                                        <label class="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                            生成的专属触发链接：
+                                        </label>
+                                        <div class="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                readonly
+                                                :value="cronUrl"
+                                                class="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300"
+                                            />
+                                            <button
+                                                type="button"
+                                                @click="copyCronUrl"
+                                                class="rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 transition-colors"
+                                            >
+                                                复制链接
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </section>
